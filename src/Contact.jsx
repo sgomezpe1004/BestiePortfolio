@@ -20,7 +20,7 @@ function Contact() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const mailtoLink = `mailto:contacto@ejemplo.com?subject=${encodeURIComponent(`${language === 'es' ? 'Mensaje de' : 'Message from'} ${formData.name}`)}&body=${encodeURIComponent(formData.message)}`;
+    const mailtoLink = `mailto:hdezmaria1004@gmail.com?subject=${encodeURIComponent(`${language === 'es' ? 'Mensaje de' : 'Message from'} ${formData.name}`)}&body=${encodeURIComponent(formData.message)}`;
     window.location.href = mailtoLink;
   };
 
