@@ -1,0 +1,89 @@
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=swap');
+@import "tailwindcss";
+@config "../tailwind.config.js";
+@custom-variant dark (&:where(.dark, .dark *));
+
+[data-theme="light"],
+:root {
+  color-scheme: light;
+  font-family: 'Manrope', ui-sans-serif, system-ui, sans-serif;
+  color: #1F2937;
+  background: #FFFFFF;
+  
+  /* Variables para el navbar */
+  --light-primary: #EC4899;
+  --light-hover: #FCE7F3;
+  --light-text-primary: #1F2937;
+  --light-border: #E5E7EB;
+  --light-bg-primary: #FFFFFF;
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+  color: #F8FAFC;
+  background: #0F172A;
+  
+  /* Variables para el navbar en modo dark */
+  --dark-primary: #EC4899;
+  --dark-text-primary: #F8FAFC;
+  --dark-bg-primary: #0F172A;
+}
+
+html, body, #root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background: #FFFFFF;
+  color: #1F2937;
+  font-family: 'Manrope', ui-sans-serif, system-ui, sans-serif;
+  font-weight: 400;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+button, input, textarea {
+  font: inherit;
+}
+
+::selection {
+  background: rgba(236, 72, 153, 0.25);
+  color: #FFFFFF;
+}
+
+[data-theme="light"] body {
+  background-image:
+    radial-gradient(circle at 12% 18%, rgba(236, 72, 153, 0.06), transparent 22%),
+    radial-gradient(circle at 88% 22%, rgba(236, 72, 153, 0.04), transparent 20%),
+    linear-gradient(135deg, #FFF7FB 0%, #FFE4F1 100%);
+  background-color: #FFFFFF;
+  color: #1F2937;
+}
+
+[data-theme="dark"] body {
+  background-image:
+    radial-gradient(circle at 78% 8%, rgba(236, 72, 153, 0.16), transparent 24%),
+    radial-gradient(circle at 12% 18%, rgba(244, 114, 182, 0.08), transparent 28%),
+    linear-gradient(135deg, #0F172A 0%, #111827 60%, #1A1025 100%);
+  background-color: #0F172A;
+  color: #F8FAFC;
+}
+
+.hero-image {
+  isolation: isolate;
+}
+
+.hero-image::before {
+  content: "";
+  position: absolute;
+  inset: 50% auto auto 50%;
+  width: 420px;
+  height: 420px;
+  background: radial-gradient(circle, rgba(236, 72, 153, 0.22), transparent 70%);
+  filter: blur(40px);
+  transform: translate(-50%, -50%);
+  z-index: -1;
+}
