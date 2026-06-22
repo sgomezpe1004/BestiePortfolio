@@ -125,7 +125,7 @@ const i18n = {
   },
 }
 
-const API_URL = 'http://localhost:3001'
+const API_URL = 'https://bestieportfolio.onrender.com'
 
 function generateId() {
   return Math.random().toString(36).slice(2, 10)

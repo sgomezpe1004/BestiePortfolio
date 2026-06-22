@@ -20,7 +20,7 @@ function App() {
   // Función para sincronizar usuario con MongoDB
   const syncUser = async (clerkUser) => {
     try {
-      const response = await fetch('http://localhost:3001/api/users/sync', {
+      const response = await fetch('https://bestieportfolio.onrender.com/api/users/sync', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
