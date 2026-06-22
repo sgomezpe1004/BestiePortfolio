@@ -48,7 +48,7 @@ function Contact() {
             </div>
             <div className="rounded-3xl border border-light-border bg-white/70 p-6 dark:border-dark-primary/15 dark:bg-dark-bg-secondary/70 dark:text-dark-text-primary">
               <p className="text-sm uppercase tracking-[0.35em] text-light-secondary">{t('contact.email')}</p>
-              <p className="mt-3 text-lg font-semibold text-light-text-primary dark:text-dark-text-primary">{language === 'es' ? 'hdezmaria1004@gmail.com' : 'Available in the form'}</p>
+              <p className="mt-3 text-lg font-semibold text-light-text-primary dark:text-dark-text-primary">{language === 'es' ? 'hdezmaria1004@gmail.com' : 'hdezmaria1004@gmail.com'}</p>
             </div>
             <div className="rounded-3xl border border-light-border bg-white/70 p-6 dark:border-dark-primary/15 dark:bg-dark-bg-secondary/70 dark:text-dark-text-primary">
               <p className="text-sm uppercase tracking-[0.35em] text-light-secondary">{t('contact.location')}</p>
