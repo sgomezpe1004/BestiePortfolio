@@ -1,13 +1,13 @@
 import { useState, useRef, useEffect } from 'react'
 import { useLanguage } from './context/LanguageContext.jsx'
-import { useUser } from '@clerk/clerk-react'
+import { useUser, SignInButton } from '@clerk/clerk-react'
 
 const SYSTEM_PROMPT = `You are an AI assistant embedded in María Belén Hernández Caro's personal portfolio website. Your job is to help visitors learn about María Belén — her background, experience, skills, projects, and personality.
 
 ## ABOUT MARÍA BELÉN HERNÁNDEZ CARO
 - **Role:** Estudiante de Negocios Internacionales (6.° Semestre) | Bilingüe (Inglés Avanzado) | Especialista en Atención al Cliente y Liderazgo
 - **Location:** Montería, Colombia
-- **Contact:** +57 302 2584585 | hdezmaria1004@gmail.com
+- **Contact:** +57 302 2584585
 - **LinkedIn:** Available on her portfolio
 
 ## PROFESSIONAL PROFILE
@@ -106,6 +106,9 @@ const i18n = {
     errorMsg: 'Algo salió mal. Por favor intenta de nuevo.',
     fallbackMsg: 'Lo siento, no pude responder.',
     chatWithAI: 'Chat con IA',
+    loginRequired: 'Inicia sesión para chatear con Nala',
+    loginSubtitle: 'Regístrate o inicia sesión para hablar con la asistente virtual de Belén.',
+    signInButton: 'Iniciar sesión / Registrarse',
   },
   en: {
     chats: 'Chats',
@@ -122,6 +125,9 @@ const i18n = {
     errorMsg: 'Something went wrong. Please try again.',
     fallbackMsg: 'Sorry, I could not respond.',
     chatWithAI: 'Chat with AI',
+    loginRequired: 'Sign in to chat with Nala',
+    loginSubtitle: 'Register or log in to talk to Belén\'s virtual assistant.',
+    signInButton: 'Sign in / Register',
   },
 }
 
@@ -295,7 +301,6 @@ export default function AI({ embedded = false }) {
     if (open) inputRef.current?.focus()
   }, [open, activeId])
 
-  // Guardar en localStorage siempre que cambien las sesiones
   useEffect(() => {
     try {
       localStorage.setItem('ai_sessions', JSON.stringify(sessions))
@@ -310,7 +315,6 @@ export default function AI({ embedded = false }) {
   }
 
   async function newSession() {
-    // Crear en MongoDB si está autenticado (en segundo plano, no afecta UI)
     if (isSignedIn && user) {
       try {
         const res = await fetch(`${API_URL}/api/sessions/${user.id}`, {
@@ -335,7 +339,6 @@ export default function AI({ embedded = false }) {
         console.error('Error creating session in DB:', error)
       }
     }
-    // Fallback a local
     const s = createSession(t.newChatName)
     setSessions((prev) => [s, ...prev])
     setActiveId(s.id)
@@ -344,7 +347,6 @@ export default function AI({ embedded = false }) {
   async function deleteSession(id) {
     const sessionToDelete = sessions.find(s => s.id === id || s._id === id)
     
-    // Eliminar de MongoDB si está autenticado
     if (isSignedIn && user && sessionToDelete?._id) {
       try {
         await fetch(`${API_URL}/api/sessions/${user.id}/${sessionToDelete._id}`, {
@@ -363,6 +365,7 @@ export default function AI({ embedded = false }) {
   }
 
   async function send() {
+    if (!isSignedIn) return // No enviar si no ha iniciado sesión
     const text = input.trim()
     if (!text || loading) return
     setInput('')
@@ -394,7 +397,6 @@ export default function AI({ embedded = false }) {
         name: s.messages.length === 0 ? text.slice(0, 30) : s.name,
       }))
 
-      // Guardar mensajes en MongoDB en segundo plano
       if (isSignedIn && user && activeSession?._id) {
         try {
           await fetch(`${API_URL}/api/sessions/${user.id}/${activeSession._id}/messages`, {
@@ -428,6 +430,32 @@ export default function AI({ embedded = false }) {
     }
   }
 
+  // Componente de inicio de sesión / registro
+  const LoginPrompt = () => (
+    <div className="flex flex-1 items-center justify-center p-6">
+      <div className="text-center space-y-4">
+        <div className="flex justify-center">
+          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-light-primary/10 dark:bg-dark-primary/15">
+            <WomanAvatar className="h-8 w-8 text-light-primary dark:text-dark-primary" fill="currentColor" />
+          </div>
+        </div>
+        <div>
+          <p className="text-lg font-semibold text-light-text-primary dark:text-dark-text-primary">
+            {t.loginRequired}
+          </p>
+          <p className="mt-2 text-sm text-light-text-secondary dark:text-dark-text-secondary">
+            {t.loginSubtitle}
+          </p>
+        </div>
+        <SignInButton mode="modal">
+          <button className="rounded-full bg-light-primary px-6 py-2.5 text-sm font-medium text-white transition hover:opacity-90 dark:bg-dark-primary">
+            {t.signInButton}
+          </button>
+        </SignInButton>
+      </div>
+    </div>
+  )
+
   const chatUI = (
     <div className={`flex h-full flex-col overflow-hidden ${embedded ? '' : 'rounded-2xl border border-light-border shadow-2xl dark:border-dark-primary/20'} bg-white/95 dark:bg-dark-bg-primary/95`}>
       {/* Header */}
@@ -453,93 +481,97 @@ export default function AI({ embedded = false }) {
         )}
       </div>
 
-      {/* Body: sidebar + messages */}
-      <div className="flex flex-1 overflow-hidden">
-        <Sidebar
-          sessions={sessions}
-          activeId={activeId}
-          onSelect={setActiveId}
-          onNew={newSession}
-          onDelete={deleteSession}
-          t={t}
-        />
+      {/* Body */}
+      {isSignedIn ? (
+        <div className="flex flex-1 overflow-hidden">
+          <Sidebar
+            sessions={sessions}
+            activeId={activeId}
+            onSelect={setActiveId}
+            onNew={newSession}
+            onDelete={deleteSession}
+            t={t}
+          />
 
-        <div className="flex flex-1 flex-col overflow-hidden">
-          {/* Messages */}
-          <div className="flex-1 overflow-y-auto px-4 py-4">
-            {activeSession?.messages.length === 0 && (
-              <div className="flex h-full flex-col items-center justify-center gap-3 text-center">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-light-primary/10 dark:bg-dark-primary/15">
-                  <WomanAvatar className="h-6 w-6 text-light-primary dark:text-dark-primary" fill="currentColor" />
+          <div className="flex flex-1 flex-col overflow-hidden">
+            {/* Messages */}
+            <div className="flex-1 overflow-y-auto px-4 py-4">
+              {activeSession?.messages.length === 0 && (
+                <div className="flex h-full flex-col items-center justify-center gap-3 text-center">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-light-primary/10 dark:bg-dark-primary/15">
+                    <WomanAvatar className="h-6 w-6 text-light-primary dark:text-dark-primary" fill="currentColor" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-light-text-primary dark:text-dark-text-primary">{t.askTitle}</p>
+                    <p className="mt-1 text-xs text-light-text-secondary dark:text-dark-text-secondary">{t.askSubtitle}</p>
+                  </div>
+                  <div className="mt-2 flex flex-wrap justify-center gap-2">
+                    {t.suggestions.map((q) => (
+                      <button
+                        key={q}
+                        onClick={() => { setInput(q); inputRef.current?.focus() }}
+                        className="rounded-full border border-light-border bg-white/80 px-3 py-1.5 text-xs text-light-text-primary transition hover:bg-light-hover dark:border-dark-primary/15 dark:bg-white/[0.03] dark:text-dark-text-primary dark:hover:bg-dark-primary/12"
+                      >
+                        {q}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-                <div>
-                  <p className="font-semibold text-light-text-primary dark:text-dark-text-primary">{t.askTitle}</p>
-                  <p className="mt-1 text-xs text-light-text-secondary dark:text-dark-text-secondary">{t.askSubtitle}</p>
+              )}
+              {activeSession?.messages.map((msg, i) => (
+                <Message key={i} msg={msg} />
+              ))}
+              {loading && (
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-light-primary dark:bg-dark-primary">
+                    <WomanAvatar className="h-4 w-4" />
+                  </div>
+                  <div className="flex gap-1 rounded-2xl rounded-tl-sm bg-light-hover px-4 py-3 dark:bg-white/[0.06]">
+                    <span className="h-2 w-2 animate-bounce rounded-full bg-light-text-secondary dark:bg-dark-text-secondary [animation-delay:0ms]" />
+                    <span className="h-2 w-2 animate-bounce rounded-full bg-light-text-secondary dark:bg-dark-text-secondary [animation-delay:150ms]" />
+                    <span className="h-2 w-2 animate-bounce rounded-full bg-light-text-secondary dark:bg-dark-text-secondary [animation-delay:300ms]" />
+                  </div>
                 </div>
-                <div className="mt-2 flex flex-wrap justify-center gap-2">
-                  {t.suggestions.map((q) => (
-                    <button
-                      key={q}
-                      onClick={() => { setInput(q); inputRef.current?.focus() }}
-                      className="rounded-full border border-light-border bg-white/80 px-3 py-1.5 text-xs text-light-text-primary transition hover:bg-light-hover dark:border-dark-primary/15 dark:bg-white/[0.03] dark:text-dark-text-primary dark:hover:bg-dark-primary/12"
-                    >
-                      {q}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-            {activeSession?.messages.map((msg, i) => (
-              <Message key={i} msg={msg} />
-            ))}
-            {loading && (
-              <div className="flex items-center gap-2 mb-3">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-light-primary dark:bg-dark-primary">
-                  <WomanAvatar className="h-4 w-4" />
-                </div>
-                <div className="flex gap-1 rounded-2xl rounded-tl-sm bg-light-hover px-4 py-3 dark:bg-white/[0.06]">
-                  <span className="h-2 w-2 animate-bounce rounded-full bg-light-text-secondary dark:bg-dark-text-secondary [animation-delay:0ms]" />
-                  <span className="h-2 w-2 animate-bounce rounded-full bg-light-text-secondary dark:bg-dark-text-secondary [animation-delay:150ms]" />
-                  <span className="h-2 w-2 animate-bounce rounded-full bg-light-text-secondary dark:bg-dark-text-secondary [animation-delay:300ms]" />
-                </div>
-              </div>
-            )}
-            <div ref={bottomRef} />
-          </div>
-
-          {/* Input */}
-          <div className="border-t border-light-border p-3 dark:border-dark-primary/15">
-            <div className="flex items-end gap-2 rounded-xl border border-light-border bg-white/80 px-3 py-2 dark:border-dark-primary/20 dark:bg-white/[0.04]">
-              <textarea
-                ref={inputRef}
-                rows={1}
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={handleKey}
-                placeholder={t.placeholder}
-                className="flex-1 resize-none bg-transparent text-sm text-light-text-primary outline-none placeholder:text-light-text-secondary dark:text-dark-text-primary dark:placeholder:text-dark-text-secondary"
-                style={{ maxHeight: '120px' }}
-                onInput={(e) => {
-                  e.target.style.height = 'auto'
-                  e.target.style.height = e.target.scrollHeight + 'px'
-                }}
-              />
-              <button
-                onClick={send}
-                disabled={!input.trim() || loading}
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-light-primary text-white transition hover:opacity-90 disabled:opacity-30 dark:bg-dark-primary"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
-                  <path d="M3.105 2.288a.75.75 0 0 0-.826.95l1.414 4.926A1.5 1.5 0 0 0 5.135 9.25h6.115a.75.75 0 0 1 0 1.5H5.135a1.5 1.5 0 0 0-1.442 1.086l-1.414 4.926a.75.75 0 0 0 .826.95 28.897 28.897 0 0 0 15.293-7.155.75.75 0 0 0 0-1.114A28.897 28.897 0 0 0 3.105 2.288Z" />
-                </svg>
-              </button>
+              )}
+              <div ref={bottomRef} />
             </div>
-            <p className="mt-1.5 text-center text-[10px] text-light-text-secondary dark:text-dark-text-secondary">
-              {t.enterHint}
-            </p>
+
+            {/* Input */}
+            <div className="border-t border-light-border p-3 dark:border-dark-primary/15">
+              <div className="flex items-end gap-2 rounded-xl border border-light-border bg-white/80 px-3 py-2 dark:border-dark-primary/20 dark:bg-white/[0.04]">
+                <textarea
+                  ref={inputRef}
+                  rows={1}
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={handleKey}
+                  placeholder={t.placeholder}
+                  className="flex-1 resize-none bg-transparent text-sm text-light-text-primary outline-none placeholder:text-light-text-secondary dark:text-dark-text-primary dark:placeholder:text-dark-text-secondary"
+                  style={{ maxHeight: '120px' }}
+                  onInput={(e) => {
+                    e.target.style.height = 'auto'
+                    e.target.style.height = e.target.scrollHeight + 'px'
+                  }}
+                />
+                <button
+                  onClick={send}
+                  disabled={!input.trim() || loading}
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-light-primary text-white transition hover:opacity-90 disabled:opacity-30 dark:bg-dark-primary"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
+                    <path d="M3.105 2.288a.75.75 0 0 0-.826.95l1.414 4.926A1.5 1.5 0 0 0 5.135 9.25h6.115a.75.75 0 0 1 0 1.5H5.135a1.5 1.5 0 0 0-1.442 1.086l-1.414 4.926a.75.75 0 0 0 .826.95 28.897 28.897 0 0 0 15.293-7.155.75.75 0 0 0 0-1.114A28.897 28.897 0 0 0 3.105 2.288Z" />
+                  </svg>
+                </button>
+              </div>
+              <p className="mt-1.5 text-center text-[10px] text-light-text-secondary dark:text-dark-text-secondary">
+                {t.enterHint}
+              </p>
+            </div>
           </div>
         </div>
-      </div>
+      ) : (
+        <LoginPrompt />
+      )}
     </div>
   )
 
